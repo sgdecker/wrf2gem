@@ -1,0 +1,210 @@
+Version 1.3.2  February 2012
+
+Send comments and questions to Steve at decker@envsci.rutgers.edu
+
+wrf2gem reads WRF output in netCDF format and produces a GEMPAK file according
+to the specifications in convert.nl.  Some diagnostics can be output on
+isobaric surfaces, and GEMPAK can handle other diagnostics or interpolations.
+wrf2gem is written in standard Fortran 90.
+
+
+* Compilation Instructions *
+Hopefully, it's just a matter of typing:
+make
+
+However, you may want or need to make changes to the Makefile.  Things to watch
+out for:
+1) The FC setting should match your Fortran 90 compiler.
+2) You may want other compiler flags (FFLAGS).
+3) Your libnetcdf.a and gemlib.a may be in different locations than mine.
+4) Depending on your GEMPAK version, you may need to link additional libraries
+   in addition to gemlib.a.  I'm currently using version 5.7.2p2.
+5) The module files created during compilation of your netCDF library need to
+   be findable by your compiler.
+
+
+* Description of convert.nl *
+Here are the variables you can set in the namelist:
+numFiles  -- number of WRF output filenames you would like to process
+		(i.e., the number of entries in fName)
+fName     -- WRF output filename(s) from which to read data
+[&INITTIME no longer needed.]
+gFName 	  -- What your GEMPAK file is or should be called
+maxGrd    -- The maximum number of grids allowed in a new GEMPAK file
+pack      -- Store grids using 16-bit GRIB packing (.true.) or do not (.false.)
+overwrite -- Add to and/or overwrite existing GEMPAK files (.true.) or do not
+	     (.false.).
+num       -- The number of variables/diagnostics to output (i.e., the number of
+        	entries in outFields)
+outFields -- Which variables/diagnostics to output.  The IDs are as follows:
+
+Variables
+ 1  - HGT: Terrain height (m)
+ 2  - T2: 2-m temperature (K)
+ 3  - Q2: 2-m water vapor mixing ratio (kg/kg)
+ 4  - ZNU: Eta coordinate on mass (half) levels
+ 5  - PB: Base state pressure (Pa)
+ 6  - P: Perturbation pressure (Pa)
+ 7  - T: Perterbation potential temperature (K)
+ 8  - U: U component of wind (m/s)
+ 9  - V: V component of wind (m/s)
+ 10 - W: W component of wind (m/s)
+ 11 - U10: U at 10 m (m/s)
+ 12 - V10: V at 10 m (m/s)
+ 13 - QVAPOR: Water vapor mixing ratio (kg/kg)
+ 14 - QCLOUD: Cloud water mixing ratio (kg/kg)
+ 15 - QICE: Ice mixing ratio (kg/kg)
+ 16 - RAINC: Accumulated cumulus precip (mm)
+ 17 - RAINNC: Accumulated grid-scale precip (mm)
+ 18 - PH: Perturbation geopotential (m^2/s^2)
+ 19 - PHB: Base-state geopotential (m^2/s^2)
+ 20 - ZNW: Eta coordinate on w (full) levels
+ 21 - LU_INDEX: Land use category
+ 22 - MU: Perturbation dry air mass in column (Pa)
+ 23 - MUB: Base-state dry air mass in column (Pa)
+ 24 - TH2: 2-m potential temperature (K)
+ 25 - QRAIN: Rain water mixing ratio (kg/kg)
+ 26 - QSNOW: Snow mixing ratio (kg/kg)
+ 27 - QGRAUP: Graupel mixing ratio (kg/kg)
+ 28 - PBLH: PBL height (m)
+ 29 - SST: Sea surface temperature (K)
+ 30 - TSK: Surface skin temperature (K)
+ 31 - SWDOWN: Downward short wave flux at ground surface (W/m^2)
+ 32 - GLW: Downward long wave flux at ground surface (W/m^2)
+ 33 - GRDFLX: Ground heat flux (W/m^2)
+ 34 - HFX: Upward heat flux at the surface (W/m^2)
+ 35 - QFX: Upward moisture flux at the surface (W/m^2)
+ 36 - LH: Latent heat flux at the surface (W/m^2)
+
+Some of these variables (like 4 and 20) don't make sense to output to a GEMPAK
+file and will be ignored.
+
+Diagnostics
+ 101 - Surface pressure (hPa)
+ 102 - Pressure at 2 m (hPa)
+ 103 - Sea level pressure (hPa)
+ 104 - Convective precipitation accumulated over one hour (mm)
+ 105 - Total precipitation accumulated over one hour (mm)
+ 106 - Total precipitation accumulated over three hours (mm)
+ 107 - Total precipitation accumulated over six hours (mm)
+ 108 - Total accumulated precipitation (mm)
+ 109 - Pressure (hPa)
+ 110 - Potential temperature (K)
+ 111 - Unstaggered U component of wind (m/s)
+ 112 - Unstaggered V component of wind (m/s)
+ 113 - Cloud water + Ice mixing ratio (kg/kg)
+ 114 - Unstaggered W component of wind (m/s)
+ 115 - 2-m temperature including at initial time (K)
+ 116 - 2-m water vapor mixing ratio including at initial time (kg/kg)
+ 117 - U at 10 m including at initial time (m/s)
+ 118 - V at 10 m including at initial time (m/s)
+ 119 - Lifted Index using lowest 4 levels (K)
+ 120 - Mean relative humidity (%) in 850-500-hPa layer
+ 121 - Geopotential height (m) on w (full) levels
+ 122 - 2-m specific humidity (kg/kg)
+ 123 - Specific humidity (kg/kg)
+ 124 - Temperature (K)
+ 125 - Geopotential height (m) on half levels
+ 126 - Dry air mass in column (Pa)
+ 127 - Most unstable CAPE w/ virt. temp. correction (J/kg)
+ 128 - Lifted parcel level of the most unstable parcel (m)
+ 129 - Surface-based CAPE w/ virt. temp. correction (J/kg)
+ 130 - Surface-based CIN w/ virt. temp. correction (J/kg)
+ 131 - Mixed-layer CAPE w/ virt. temp. correction (J/kg)
+ 132 - Mixed-layer CIN w/ virt. temp. correction (J/kg)
+ 133 - Mixed-layer LCL (m)
+ 134 - Mixed-layer LFC (m)
+ 135 - U component of Bunkers storm motion (m/s)
+ 136 - V component of Bunkers storm motion (m/s)
+ 137 - 0-1-km storm relative helicity (m2/s2)
+ 138 - Column integrated precipitable water (cm)
+ 139 - Reflectivity (dBZ)
+ 140 - Composite reflectivity (dBZ)
+
+Diagnostics interpolated to isobaric levels
+ 501 - Temperature (K)
+ 502 - U component of wind (m/s)
+ 503 - V component of wind (m/s)
+ 504 - W component of wind (m/s)
+ 505 - Geopotential height (m)
+ 506 - Specific humidity (kg/kg)
+
+pb        -- Bottom pressure level for isobaric diagnostics
+pt        -- Top pressure level for isobaric diagnostics
+dp        -- Pressure interval for isobaric diagnostics
+
+
+* Adding Diagnostics *
+The conversion code is designed to be extended fairly easily (I hope).  Here's
+what you should do if you'd like to add a diagnostic or variable.
+1) Determine if you're adding a variable (i.e., simply moving grids from the
+   WRF output to the GEMPAK file with no calculation whatsoever) or a
+   diagnostic (everything else).
+
+2) The variable case is easy.  Modify registry.f90 as follows:
+   a) Add a comment after this line:
+        ! 36 - LH: Latent heat flux at the surface (W/m^2)
+   b) Increment the value of LastWRF in this line:
+        integer, parameter :: LastWRF = 36, FirstDiag = 101, LastDiag = 140,  &
+   c) Insert an identifier for your variable after this line:
+       LaHeat    = 36
+   d) Add an appropriate initialization statement after this line:
+        wrfVar(LaHeat)    = wrf_var(1, 0, -1, None, "LH", "LH", .false.)
+      The wrf_var type definition (around line 195) will be helpful here.
+
+3) For the diagnostic case, make modifications to registry.f90 as follows:
+   a) Add a comment after this line:
+        ! 140 - Composite reflectivity (dBZ)
+   b) Increment the value of LastDiag in this line:
+        integer, parameter :: LastWRF = 36, FirstDiag = 101, LastDiag = 140,  &
+   c) Insert an identifier for your diagnostic after this line:
+        CompRefl  = 140
+   d) Add an appropriate initialization statement after this line:
+        diagVar(CompRefl)  = diag_var(1, 0, -1, None, CompRefl, "CREF")
+      The diag_var type definition (around line 205) will be helpful here.
+   e) Add your diagnostic to the "select case (var%diagID)" block in subroutine
+      diag_out.
+   f) Write a simple function for your diagnostic and add it before the
+      "end module registry" line.  Call it diag_identifier to match the others.
+
+4) If your diagnostic is particularly complex, you may need to add functions
+   to diagnostics.f90 as well.  If you do this, you'll need to make these
+   additional changes:
+   a) Add any new functions you call from your diag_identifier function to the
+      list of functions in the following statement in registry.f90:
+  use diagnostics,  only: vint, hydro_interp, mix_ratio_to_spec_hum,  &
+                          temp_from_theta_p, surface_pres, density, sea_pres, &
+                          lifted_index, mean_rh, unstag_hght, cape,  &
+                          sfcape => sbcape, mlcape, lcl_lfc, storm_motion,  &
+                          storm_rel_hel, calcdbz
+   b) Add your function name to the following statement in diagnostics.f90:
+  public :: vint, hydro_interp, mix_ratio_to_spec_hum, temp_from_theta_p,  &
+            surface_pres, density, sea_pres, lifted_index, mean_rh,  &
+            unstag_hght, cape, sbcape, mlcape, lcl_lfc, storm_motion,  &
+            storm_rel_hel, calcdbz
+      Notice how this statement matches the corresponding statement from
+      registry.f90.
+   c) Add your new function(s) to diagnostics.f90.  Public functions go first,
+      then private functions.
+
+5) Recompile, and see if it works!
+
+6) If you think your diagnostic should be a part of the "official" version of
+   wrf2gem, send me your new functions and I'll incorporate them.
+
+7) Adding a diagnostic for output on isobaric surfaces is a bit more
+   complicated, but it follows a pattern similar to that for regular
+   diagnostics.  Examine the pres_diag_out subroutine if you want to make an
+   addition here.
+
+
+* Limitations *
+1) The polar stereographic projection is not yet supported.
+2) The x-hr precipitation accumulations (104-107) will be set to zero for times
+   at which the accumulation interval spans more than one history file.
+   Exception: If each history file contains only one output time, these
+              diagnostics work fine.
+   Workaround: Output total accumulated precip (108), then use, e.g., 
+               gfunc = sub(ptot^f27,ptot^f21) to get a 6-hr accumulation valid
+               at forecast hour 27 if each history file contains a day's worth
+               of data.
